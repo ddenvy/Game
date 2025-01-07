@@ -4,74 +4,56 @@ import com.battle.heroes.army.Army;
 import com.battle.heroes.army.Unit;
 import com.battle.heroes.army.programs.GeneratePreset;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class GeneratePresetImpl implements GeneratePreset {
+    private static final int MAX_UNITS_PER_TYPE = 11;
+    private static final int MAX_POINTS = 1500;
+
+    @Override
     public Army generate(List<Unit> unitList, int maxPoints) {
-        Army army = new Army();
+        Army computerArmy = new Army();
         List<Unit> selectedUnits = new ArrayList<>();
-        Map<String, Integer> unitCounts = new HashMap<>();
-        Random random = new Random();
-        int usedPoints = 0;
+        int currentPoints = 0;
 
-        // Сортируем юниты по эффективности (атака/стоимость и здоровье/стоимость)
-        unitList.sort((u1, u2) -> {
-            double ratio1 = (double) u1.getBaseAttack() / u1.getCost() + (double) u1.getHealth() / u1.getCost();
-            double ratio2 = (double) u2.getBaseAttack() / u2.getCost() + (double) u2.getHealth() / u2.getCost();
-            return Double.compare(ratio2, ratio1);
-        });
-
-        System.out.println("Available units for generation:");
-        for (Unit unit : unitList) {
-            System.out.println(unit.getUnitType() + " (Cost: " + unit.getCost() + ")");
-        }
+        // Sort units by efficiency: attack/cost and health/cost
+        unitList.sort(Comparator.comparingDouble(this::calculateUnitEfficiency).reversed());
 
         for (Unit unit : unitList) {
-            String unitType = unit.getUnitType();
-            int cost = unit.getCost();
-            int count = unitCounts.getOrDefault(unitType, 0);
+            if (currentPoints >= maxPoints) break;
 
-            if (count < 11 && usedPoints + cost <= maxPoints) {
-                int[] coordinates = findAvailableCoordinates(selectedUnits, random);
-                if (coordinates != null) {
-                    Unit newUnit = new Unit(
-                            unitType + " " + (count + 1),
-                            unit.getUnitType(),
-                            unit.getHealth(),
-                            unit.getBaseAttack(),
-                            unit.getCost(),
-                            unit.getAttackType(),
-                            unit.getAttackBonuses(),
-                            unit.getDefenceBonuses(),
-                            coordinates[0],
-                            coordinates[1]
-                    );
-                    selectedUnits.add(newUnit);
-                    army.getUnits().add(newUnit);
-                    usedPoints += cost;
-                    unitCounts.put(unitType, count + 1);
-                    System.out.println("Added unit: " + newUnit.getName() + " (Cost: " + cost + ")");
-                }
+            int maxUnitsForType = Math.min(MAX_UNITS_PER_TYPE, (maxPoints - currentPoints) / unit.getCost());
+            for (int i = 0; i < maxUnitsForType; i++) {
+                selectedUnits.add(createUnitCopy(unit));
+                currentPoints += unit.getCost();
             }
         }
 
-        System.out.println("Total used points: " + usedPoints);
-        System.out.println("Computer army size: " + army.getUnits().size());
-        System.out.println("Computer army units:");
-        for (Unit unit : army.getUnits()) {
-            System.out.println(unit.getName() + " (Alive: " + unit.isAlive() + ")");
-        }
-        return army;
+        computerArmy.setUnits(selectedUnits);
+        computerArmy.setPoints(currentPoints);
+
+        System.out.println("Generated army with " + selectedUnits.size() + " units and " + currentPoints + " points.");
+        return computerArmy;
     }
 
-    private int[] findAvailableCoordinates(List<Unit> units, Random random) {
-        for (int i = 0; i < 100; i++) {
-            int x = random.nextInt(3); // 0..2
-            int y = random.nextInt(21); // 0..20
-            if (units.stream().noneMatch(u -> u.getxCoordinate() == x && u.getyCoordinate() == y)) {
-                return new int[]{x, y};
-            }
-        }
-        return null;
+    private double calculateUnitEfficiency(Unit unit) {
+        return (double) unit.getBaseAttack() / unit.getCost() + (double) unit.getHealth() / unit.getCost();
+    }
+
+    private Unit createUnitCopy(Unit unit) {
+        return new Unit(
+                unit.getName(),
+                unit.getUnitType(),
+                unit.getHealth(),
+                unit.getBaseAttack(),
+                unit.getCost(),
+                unit.getAttackType(),
+                unit.getAttackBonuses(),
+                unit.getDefenceBonuses(),
+                unit.getxCoordinate(),
+                unit.getyCoordinate()
+        );
     }
 }

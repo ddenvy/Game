@@ -2,99 +2,91 @@ package programs;
 
 import com.battle.heroes.army.Unit;
 import com.battle.heroes.army.programs.Edge;
-import com.battle.heroes.army.programs.EdgeDistance;
 import com.battle.heroes.army.programs.UnitTargetPathFinder;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Set;
+
+import java.util.*;
 
 public class UnitTargetPathFinderImpl implements UnitTargetPathFinder {
     private static final int WIDTH = 27;
     private static final int HEIGHT = 21;
-    private static final int[][] DIRECTIONS = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
+    @Override
     public List<Edge> getTargetPath(Unit attackUnit, Unit targetUnit, List<Unit> existingUnitList) {
-        int[][] distance = new int[WIDTH][HEIGHT];
-        boolean[][] visited = new boolean[WIDTH][HEIGHT];
-        Edge[][] parent = new Edge[WIDTH][HEIGHT];
-        PriorityQueue<EdgeDistance> queue = new PriorityQueue<>(Comparator.comparingInt(EdgeDistance::getDistance));
+        List<Edge> path = new ArrayList<>();
+        Set<Edge> occupiedCells = getOccupiedCells(existingUnitList);
 
-        // Инициализация расстояний
-        for (int i = 0; i < WIDTH; i++) {
-            Arrays.fill(distance[i], Integer.MAX_VALUE);
-        }
+        Edge start = new Edge(attackUnit.getxCoordinate(), attackUnit.getyCoordinate());
+        Edge goal = new Edge(targetUnit.getxCoordinate(), targetUnit.getyCoordinate());
 
-        int startX = attackUnit.getxCoordinate();
-        int startY = attackUnit.getyCoordinate();
-        distance[startX][startY] = 0;
-        queue.add(new EdgeDistance(startX, startY, 0));
+        Map<Edge, Integer> gScore = new HashMap<>();
+        Map<Edge, Integer> fScore = new HashMap<>();
+        gScore.put(start, 0);
+        fScore.put(start, heuristic(start, goal));
 
-        // Множество занятых клеток
-        Set<String> occupied = new HashSet<>();
-        for (Unit unit : existingUnitList) {
-            if (unit != attackUnit && unit != targetUnit && unit.isAlive()) {
-                occupied.add(unit.getxCoordinate() + "," + unit.getyCoordinate());
-            }
-        }
+        PriorityQueue<Edge> openSet = new PriorityQueue<>(Comparator.comparingInt(fScore::get));
+        openSet.add(start);
 
-        // Алгоритм Дейкстры
-        while (!queue.isEmpty()) {
-            EdgeDistance current = queue.poll();
-            int x = current.getX();
-            int y = current.getY();
+        Map<Edge, Edge> cameFrom = new HashMap<>();
 
-            if (visited[x][y]) continue;
-            visited[x][y] = true;
+        while (!openSet.isEmpty()) {
+            Edge current = openSet.poll();
 
-            if (x == targetUnit.getxCoordinate() && y == targetUnit.getyCoordinate()) {
-                break;
+            if (current.equals(goal)) {
+                reconstructPath(cameFrom, current, path);
+                return path;
             }
 
-            for (int[] dir : DIRECTIONS) {
-                int nx = x + dir[0];
-                int ny = y + dir[1];
+            for (Edge neighbor : getNeighbors(current)) {
+                if (occupiedCells.contains(neighbor)) continue;
 
-                if (isValid(nx, ny, occupied)) {
-                    int newDist = distance[x][y] + 1;
-                    if (newDist < distance[nx][ny]) {
-                        distance[nx][ny] = newDist;
-                        parent[nx][ny] = new Edge(x, y);
-                        queue.add(new EdgeDistance(nx, ny, newDist));
+                int tentativeGScore = gScore.getOrDefault(current, Integer.MAX_VALUE) + 1;
+
+                if (tentativeGScore < gScore.getOrDefault(neighbor, Integer.MAX_VALUE)) {
+                    cameFrom.put(neighbor, current);
+                    gScore.put(neighbor, tentativeGScore);
+                    fScore.put(neighbor, tentativeGScore + heuristic(neighbor, goal));
+
+                    if (!openSet.contains(neighbor)) {
+                        openSet.add(neighbor);
                     }
                 }
             }
         }
 
-        // Восстановление пути
-        List<Edge> path = new ArrayList<>();
-        int x = targetUnit.getxCoordinate();
-        int y = targetUnit.getyCoordinate();
-
-        if (parent[x][y] == null) {
-            System.out.println("Unit " + attackUnit.getName() + " cannot find path to attack unit " + targetUnit.getName());
-            return path;
-        }
-
-        while (x != startX || y != startY) {
-            path.add(new Edge(x, y));
-            Edge p = parent[x][y];
-            x = p.getX();
-            y = p.getY();
-        }
-
-        path.add(new Edge(startX, startY));
-        Collections.reverse(path);
         return path;
     }
 
-    private boolean isValid(int x, int y, Set<String> occupied) {
-        return x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT && !occupied.contains(x + "," + y);
+    private Set<Edge> getOccupiedCells(List<Unit> existingUnitList) {
+        Set<Edge> occupiedCells = new HashSet<>();
+        for (Unit unit : existingUnitList) {
+            if (unit.isAlive()) {
+                occupiedCells.add(new Edge(unit.getxCoordinate(), unit.getyCoordinate()));
+            }
+        }
+        return occupiedCells;
+    }
+
+    private void reconstructPath(Map<Edge, Edge> cameFrom, Edge current, List<Edge> path) {
+        while (cameFrom.containsKey(current)) {
+            path.add(0, current);
+            current = cameFrom.get(current);
+        }
+    }
+
+    private int heuristic(Edge a, Edge b) {
+        return Math.abs(a.getX() - b.getX()) + Math.abs(a.getY() - b.getY());
+    }
+
+    private List<Edge> getNeighbors(Edge edge) {
+        List<Edge> neighbors = new ArrayList<>();
+        int x = edge.getX();
+        int y = edge.getY();
+
+        if (x > 0) neighbors.add(new Edge(x - 1, y));
+        if (x < WIDTH - 1) neighbors.add(new Edge(x + 1, y));
+        if (y > 0) neighbors.add(new Edge(x, y - 1));
+        if (y < HEIGHT - 1) neighbors.add(new Edge(x, y + 1));
+
+        return neighbors;
     }
 }

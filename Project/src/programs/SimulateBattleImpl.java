@@ -4,18 +4,19 @@ import com.battle.heroes.army.Army;
 import com.battle.heroes.army.Unit;
 import com.battle.heroes.army.programs.PrintBattleLog;
 import com.battle.heroes.army.programs.SimulateBattle;
+
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 public class SimulateBattleImpl implements SimulateBattle {
-    private PrintBattleLog printBattleLog;
+    private final PrintBattleLog printBattleLog;
 
     // Конструктор по умолчанию
     public SimulateBattleImpl() {
         this.printBattleLog = new PrintBattleLog() {
             @Override
             public void printBattleLog(Unit attackingUnit, Unit target) {
-                // Простая реализация лога по умолчанию
                 if (target != null) {
                     System.out.println(attackingUnit.getName() + " attacks " + target.getName());
                 } else {

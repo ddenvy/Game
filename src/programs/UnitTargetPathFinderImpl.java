@@ -7,6 +7,16 @@ import com.battle.heroes.army.programs.UnitTargetPathFinder;
 
 import java.util.*;
 
+/* Алгоритмическая сложность:
+
+Инициализация расстояний: O(WIDTH * HEIGHT).
+
+Основной цикл алгоритма Дейкстры: O((WIDTH * HEIGHT) log (WIDTH * HEIGHT)).
+
+Восстановление пути: O(L), где L — длина пути.
+
+Общая сложность: O((WIDTH * HEIGHT) log (WIDTH * HEIGHT)). */
+
 public class UnitTargetPathFinderImpl implements UnitTargetPathFinder {
     private static final int WIDTH = 27;
     private static final int HEIGHT = 21;

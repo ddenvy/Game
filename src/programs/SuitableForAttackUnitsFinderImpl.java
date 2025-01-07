@@ -7,6 +7,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/* Алгоритмическая сложность:
+
+Внешний цикл по рядам: O(m), где m — количество рядов (фиксировано 3).
+
+Внутренний цикл по юнитам в ряду: O(n), где n — количество юнитов в ряду.
+
+Проверка блокировки: O(m).
+
+Общая сложность: O(m * n * m) = O(n) (так как m фиксировано). */
+
 public class SuitableForAttackUnitsFinderImpl implements SuitableForAttackUnitsFinder {
     public List<Unit> getSuitableUnits(List<List<Unit>> unitsByRow, boolean isLeftArmyTarget) {
         List<Unit> suitableUnits = new ArrayList<>();

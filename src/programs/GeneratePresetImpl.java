@@ -11,6 +11,14 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Random;
 
+/* Алгоритмическая сложность:
+
+Сортировка юнитов: O(n log n), где n — количество типов юнитов.
+
+Основной цикл: O(n * m), где n — количество типов юнитов, m — максимальное количество юнитов в армии.
+
+Общая сложность: O(n * m). */
+
 public class GeneratePresetImpl implements GeneratePreset {
     public Army generate(List<Unit> unitList, int maxPoints) {
         Army army = new Army();

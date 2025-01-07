@@ -9,6 +9,14 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+/* Алгоритмическая сложность:
+
+Сортировка юнитов: O(n log n), где n — количество юнитов в армии.
+
+Основной цикл симуляции: O(n^2), так как для каждого юнита выполняется атака, и в худшем случае каждый юнит атакует всех остальных.
+
+Общая сложность: O(n^2 log n). */
+
 public class SimulateBattleImpl implements SimulateBattle {
     private PrintBattleLog printBattleLog;
 
